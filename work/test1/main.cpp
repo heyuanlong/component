@@ -3,6 +3,7 @@
 #include "netlib/tcpClass.h"
 #include "netlib/socketClass.h"
 
+#include "base.h"
 
 void test_open()
 {
@@ -22,9 +23,10 @@ void test_error(const int fd,const char * msg)
 }
 void test_message(const int fd,const void * msg,const int size)
 {
-
-
-	printf(" fd:%d,MSG:useid:%d,size:%d\n",fd,size);
+	msg_t *que = (msg_t*)(msg);
+	printf(" fd:%d,MSG:useid:%d,size:%d",fd,que->userid,size);
+	write(STDOUT_FILENO,que->data,que->dataSize);
+	printf("\n");
 
 }
 
