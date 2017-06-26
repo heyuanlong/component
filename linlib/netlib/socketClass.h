@@ -2,6 +2,18 @@
 #define SOCKETCLASS_H
 
 
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <pthread.h>
+
+#include <sys/epoll.h>
 
 
 
@@ -20,6 +32,7 @@ typedef struct fd_data_struct{
 	void 							*ptail;
     void 							*pdata;
 	int 							size;
+	gateway_handle_t				*handle;
 }fd_data_struct_t;
 
 
