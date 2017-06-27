@@ -1,19 +1,19 @@
 Dir=linlib/ \
 linlib/commonlib/ \
 linlib/netlib/ \
-work/test1/
+work/testnet/
 
 
 
 
 #---------------------------
-test1Src=$(foreach dir,$(Dir), $(wildcard $(dir)*.cpp))
-test1Obj=$(patsubst %.cpp,%.o,$(test1Src))
+testnetSrc=$(foreach dir,$(Dir), $(wildcard $(dir)*.cpp))
+testnetObj=$(patsubst %.cpp,%.o,$(testnetSrc))
 
 #---------------------------
 makeDir=./makeDir
-test1 = bin/test1
-clienttest1 = bin/clienttest1
+testnet = bin/testnet
+clienttestnet = bin/clienttestnet
 
 #---------------------------
 Inc =$(foreach dir,$(Dir),-I $(dir)) -I ./
@@ -23,7 +23,7 @@ CC=g++
 
 .PHONY: all clean
 
-all:	$(makeDir) $(test1) $(clienttest1)
+all:	$(makeDir) $(testnet) $(clienttestnet)
 	@echo all is ok
 
 #------------ 
@@ -31,7 +31,7 @@ $(makeDir):
 	mkdir -p bin/
 
 #------------ 
-$(test1):$(test1Obj)
+$(testnet):$(testnetObj)
 	$(CC) $(Lib) -o $@ $^
 
 linlib/commonlib/%.o:linlib/commonlib/%.cpp
@@ -40,18 +40,18 @@ linlib/commonlib/%.o:linlib/commonlib/%.cpp
 linlib/netlib/%.o:linlib/netlib/%.cpp
 	$(CC) $(Inc) -c -o $@ $^
 
-work/test1/%.o:work/test1/%.cpp
+work/testnet/%.o:work/testnet/%.cpp
 	$(CC) $(Inc) -c -o $@ $^
 
 
 #------------ 
-$(clienttest1):client/clienttest1/base.h client/clienttest1/client.h client/clienttest1/client.cpp
+$(clienttestnet):client/clienttestnet/base.h client/clienttestnet/client.h client/clienttestnet/client.cpp
 	$(CC) $(Lib) -o $@ $^
 #------------ 
 
 
 clean:
-	rm -rf $(test1Obj)
-	rm -rf $(test1)
-	rm -rf $(clienttest1)
+	rm -rf $(testnetObj)
+	rm -rf $(testnet)
+	rm -rf $(clienttestnet)
 
