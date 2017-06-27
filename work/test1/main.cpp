@@ -1,6 +1,6 @@
 #include "stdio.h"
 #include "stdlib.h"
-#include "netlib/tcpClass.h"
+#include "netlib/tcpUdpClass.h"
 #include "netlib/socketClass.h"
 
 
@@ -38,7 +38,14 @@ int main(int argc, char const *argv[])
 	handle.error = test_error;
 	handle.message = test_message;
 
-	tcpClass tp;
+	gateway_udp_handle_t udphandle;
+	udphandle.open = test_udp_open;
+	udphandle.error = test_udp_error;
+	udphandle.message = test_udp_message;
+
+
+
+	tcpUdpClass tp;
 	tp.add_tcp_listen("0.0.0.0",6001,&handle);
 	tp.run();
 

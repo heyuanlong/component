@@ -27,6 +27,16 @@ typedef struct gateway_handle
 	void (*message) (const int fd,const void * msg,const int size);
 }gateway_handle_t;
 
+typedef struct gateway_udp_handle
+{
+	void (*open) ();
+	void (*error) (const int fd,const char * msg );
+	void (*message) (const int fd,const void * msg,const int size,struct sockaddr_in client_addr,socklen_t client_len);
+}gateway_udp_handle_t;
+
+
+
+
 typedef struct fd_data_struct{
 	void 							*porigin;
 	void 							*ptail;
@@ -37,6 +47,7 @@ typedef struct fd_data_struct{
 
 
 int 			socketinit(const char *ip,int port);
+int 			socketinit_udp(const char *ip,int port);
 int 			set_socket_nonblock(int fd);
 
 #endif

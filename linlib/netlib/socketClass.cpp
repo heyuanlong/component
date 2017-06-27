@@ -11,12 +11,6 @@ int socketinit(const char *ip,int port)
 	if(fds == -1){
 		return -1;
 	}
-	struct sockaddr_in serverAddr;
-	bzero(&serverAddr,sizeof(serverAddr));
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(port);
-	serverAddr.sin_addr.s_addr  =  inet_addr(ip);
-
 	int val=1;
     if (0 != setsockopt(fds,SOL_SOCKET,SO_REUSEADDR,(const void*)&val,sizeof(int))){
 		return -1;
@@ -25,6 +19,11 @@ int socketinit(const char *ip,int port)
     	return -1;
     }
 
+	struct sockaddr_in serverAddr;
+	bzero(&serverAddr,sizeof(serverAddr));
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(port);
+	serverAddr.sin_addr.s_addr  =  inet_addr(ip);
 	if(bind(fds,(struct sockaddr *)&serverAddr,sizeof(struct sockaddr)) == -1){
 		return -1;
 	}
@@ -34,6 +33,35 @@ int socketinit(const char *ip,int port)
 	}
 	return fds;
 }
+
+int socketinit_udp(const char *ip,int port)
+{
+	int fds = socket(AF_INET,SOCK_DGRAM,0);
+	if(fds == -1){
+		return -1;
+	}
+	int val=1;
+    if (0 != setsockopt(fds,SOL_SOCKET,SO_REUSEADDR,(const void*)&val,sizeof(int))){
+		return -1;
+    }
+    if (set_socket_nonblock(fds) < 0){
+    	return -1;
+    }
+
+
+	struct sockaddr_in serverAddr;
+	bzero(&serverAddr,sizeof(serverAddr));
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(port);
+	serverAddr.sin_addr.s_addr  =  inet_addr(ip);//htonl(INADDR_ANY);
+
+	if(bind(fds,(struct sockaddr *)&serverAddr,sizeof(struct sockaddr)) == -1){
+		return -1;
+	}
+	return fds;
+}
+
+
 
 int set_socket_nonblock(int fd)
 {
