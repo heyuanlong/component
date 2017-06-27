@@ -2,14 +2,14 @@
 #include "tcpUdpClass.h"
 
 
-tcpUdpClass::tcpClass()
+tcpUdpClass::tcpUdpClass()
 {
 	m_epoll			= -1;
 	m_online		= 0;
 	m_status		= TCPCLASSNOTRUN;
 }
 
-tcpUdpClass::~tcpClass()
+tcpUdpClass::~tcpUdpClass()
 {
 
 }
@@ -163,7 +163,7 @@ void tcpUdpClass::deal_udp_fd(int fd)
   	socklen_t client_len = sizeof(client_addr);
 
 	len = recvfrom(fd, m_udp_buf, MSGMAXSIZE, 0, (struct sockaddr *)&client_addr, &client_len);
-	if (ret > 0){
+	if (len > 0){
 		m_udp_fd_map[fd]->message(fd,m_udp_buf,len,client_addr,client_len);
 	}
 	else{
