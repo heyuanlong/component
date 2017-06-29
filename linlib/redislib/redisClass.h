@@ -14,13 +14,16 @@ public:
 	~redisClass();
 public:
 	int init(const char *host,const int port ,const char * auth);
+	redisContext* getRedisCT();
+
+public:
 	int ping();
 	int set(const char *key,const char* value);
 	int get(const char *key,char *value);
+	int incr(const char *key,long long *value);
 
 private:
 	redisContext 					*m_rc;
-	/* data */
 };
 
 
