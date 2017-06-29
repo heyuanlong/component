@@ -22,7 +22,7 @@ void test_error(const int fd,const char * msg)
 {
 	printf("test_error fd:%d,msg:%s\n",fd, msg);
 }
-void test_message(const int fd,const void * msg,const int size)
+void test_message(const int fd,const void * msg, const int cmd,const int size)
 {
 	msg_t *que = (msg_t*)(msg);
 	printf(" fd:%d,MSG:useid:%d,size:%d",fd,que->userid,size);
@@ -69,7 +69,11 @@ int main(int argc, char const *argv[])
 	tp.add_tcp_listen("0.0.0.0",6001,&handle);
 	tp.add_udp_listen("0.0.0.0",6002,&udphandle);
 
-	tp.run();
+	for (;;)
+	{
+		tp.run();
+	}
+	
 
 	return 0;
 }
