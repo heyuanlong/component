@@ -63,7 +63,7 @@ void * deal(void *param)
 	int tempSendLen = 0;
 	int sendLen = 0;
 	for(;;){
-		sleep(1);
+		usleep(100 * 1000);
 		res = getBuf(buf,&bufLen,&type);
 		tempSendLen = 0;
 		for(;;){

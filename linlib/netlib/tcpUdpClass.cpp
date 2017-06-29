@@ -262,6 +262,7 @@ void tcpUdpClass::send_tcp(int fd,char *buf,int size)
 	int ret = net_send(fd,buf,size);
 	if (ret == -1){
 		pclose_fd(fd);
+		//printf("--------------------------------------------------------------------------4\n");
 		return;
 	}
 
@@ -274,7 +275,7 @@ int tcpUdpClass::add_to_send_buf(fd_data_struct_t* n,char *buf,int size)
 		return 0;
 	}
 	if ( (n->s_size + size) > MSGMAXSIZE ){
-		// msg too much
+		//printf("---------------------------------------------------------------------------------5\n");
 		return -1;
 	}
 
@@ -305,6 +306,7 @@ void tcpUdpClass::deal_client_send_fd(int fd)
 
 	int ret = net_send(fd,(char *)n->s_pdata,n->s_size);
 	if (ret == -1){
+		//printf("--------------------------------------------------------------------------6\n");
 		pclose_fd(fd);
 	}
 

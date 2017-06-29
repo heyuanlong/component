@@ -6,6 +6,11 @@
 
 #include "base.h"
 
+
+
+tcpUdpClass tp;
+
+
 void test_open()
 {
 	printf("test_open\n");
@@ -29,6 +34,11 @@ void test_message(const int fd,const void * msg, const int cmd,const int size)
 	write(STDOUT_FILENO,que->data,que->dataSize);
 	printf("\n");
 
+	for (int i = 0; i < 200; ++i)
+	{
+		//tp.send_tcp(fd,"111111111111111111111111",sizeof("111111111111111111111111"));
+	}
+	
 }
 
 
@@ -65,7 +75,7 @@ int main(int argc, char const *argv[])
 
 
 
-	tcpUdpClass tp;
+	
 	tp.add_tcp_listen("0.0.0.0",6001,&handle);
 	tp.add_udp_listen("0.0.0.0",6002,&udphandle);
 

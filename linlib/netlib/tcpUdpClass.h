@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <map>
 #include <error.h>
+#include <stdio.h>
 
 #define EPOLL_SIZE 1024
 #define HEADERSIZE 2

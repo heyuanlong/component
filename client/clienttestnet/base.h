@@ -9,7 +9,7 @@
 typedef struct head_s head_t;
 struct head_s
 {
-	unsigned short size;
+	int size;
 	int cmd;
 };
 
