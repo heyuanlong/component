@@ -3,8 +3,15 @@
 
 
 
+#include "socket_base.h"
+#include "socket_help.h"
+#include "socket_epoll.h"
+#include "socket_recv.h"
+#include "socket_sent.h"
+
+
 #include "socketClass.h"
-#include "socketEpoll.h"
+
 
 
 #include <stdlib.h>
@@ -13,7 +20,7 @@
 #include <error.h>
 #include <stdio.h>
 
-#define EPOLL_SIZE 1024
+
 #define HEADERSIZE 2
 
 #define TCPCLASSRUNNING 1
@@ -28,25 +35,28 @@ public:
 public:
 	int 		add_tcp_listen(const char * ip,const int port,gateway_handle_t *handle);
 	int 		add_udp_listen(const char * ip,const int port,gateway_udp_handle_t *handle);
-	void 		send_udp(int fd,char *buf,int size,struct sockaddr_in client_addr,socklen_t client_len);
+
+	void 		send_udp_addr(int fd,char *buf,int size,struct sockaddr_in client_addr,socklen_t client_len);
+	void 		send_udp_ip_port(int fd,char *buf,int size,const char *ip,const int port);
+
 	void 		send_tcp(int fd,char *buf,int size);
 	int 		run();
+
 	int 		close_fd(int fd);
 
 
 private:
-	int 						init_epoll();
 	int 						go_run();
 
 	bool 						is_lister_fd(int fd);
 	bool 						is_udp_fd(int fd);
+	
 	int 						deal_lister_fd(int fd);
 	void 						deal_udp_recv_fd(int fd);
 	void 						deal_client_recv_fd(int fd);
-	void 						deal_udp_send_fd(int fd);
+
 	void 						deal_client_send_fd(int fd);
 	int 						add_to_send_buf(fd_data_struct_t* n,char *buf,int size);
-	int 						net_send(int fd,char *buf,int size);
 
 	void						pclose_fd(int fd);
 
@@ -67,7 +77,7 @@ private:
 	struct epoll_event 					m_ready_event[EPOLL_SIZE];
 	struct epoll_event 					m_temp_event;
 
-	char 								*m_udp_buf[MSGMAXSIZE];
+	
 };
 
 
