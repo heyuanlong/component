@@ -93,6 +93,7 @@ int tcpUdpClass::go_run()
 	}
 	if(ready_event_nums == 0){
 		//设置超时的情况
+		printf("--------------------设置超时的情况------------------------\n");
 		return 0;
 	}
 	for (int i = 0; i < ready_event_nums; ++i)
@@ -133,32 +134,39 @@ int tcpUdpClass::go_run()
 	return 0;
 }
 
-void tcpUdpClass::deal_lister_fd(int fd)
+int tcpUdpClass::deal_lister_fd(int fd)
 {
-	int client = accept(fd,NULL,NULL);
-	if (client == -1){
-		//
-		return;
-	}
-	if (set_socket_nonblock(client) < 0){
-    	//
-		return;
-    }
-	
-	if ((m_online+1) > EPOLL_SIZE){
-		m_lister_fd_map[fd]->error(client,"more than EPOLL_SIZE");
-		return;
-	}
+	struct sockaddr_in addr_in;
+	int size;
 
-	if (sp_add(m_epoll,client,client) == -1){
-		m_lister_fd_map[fd]->error(-1,"add epoll fail");
-		close(client);
-		return ;
-	}
+	while( 1 ){
+		int client = accept(fd,( struct sockaddr* )&addr_in, ( socklen_t* ) &size );
+		if (client == -1){
+			if(errno == EINTR){
+				continue;
+			}
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				return 0;
+			}
+			return -1;
+		}
 
-	++m_online;
-	init_client_node(client,m_lister_fd_map[fd]);
-	m_lister_fd_map[fd]->connect(client,"");
+		set_socket_nonblock(client);
+		if ((m_online+1) > EPOLL_SIZE){
+			m_lister_fd_map[fd]->error(client,"more than EPOLL_SIZE");
+			return -1;
+		}
+
+		if (sp_add(m_epoll,client,client) == -1){
+			m_lister_fd_map[fd]->error(-1,"add epoll fail");
+			close(client);
+			return -1;
+		}
+
+		++m_online;
+		init_client_node(client,m_lister_fd_map[fd]);
+		m_lister_fd_map[fd]->connect(client,"");
+	}
 }
 void tcpUdpClass::deal_udp_recv_fd(int fd)
 {
@@ -166,13 +174,13 @@ void tcpUdpClass::deal_udp_recv_fd(int fd)
 	struct sockaddr_in client_addr;
   	socklen_t client_len = sizeof(client_addr);
 
-	len = recvfrom(fd, m_udp_buf, MSGMAXSIZE, 0, (struct sockaddr *)&client_addr, &client_len);
-	if (len > 0){
-		m_udp_fd_map[fd]->message(fd,m_udp_buf,len,client_addr,client_len);
-	}
-	else{
-		m_udp_fd_map[fd]->error(fd,strerror(errno));
-		//printf("received failed! error code %d，message : %s \n",errno, strerror(errno));
+	while(1){
+		len = recvfrom(fd, m_udp_buf, MSGMAXSIZE, 0, (struct sockaddr *)&client_addr, &client_len);
+		if (len > 0){
+			m_udp_fd_map[fd]->message(fd,m_udp_buf,len,client_addr,client_len);
+			continue;
+		}
+		return;
 	}
 }
 void tcpUdpClass::deal_client_recv_fd(int fd)

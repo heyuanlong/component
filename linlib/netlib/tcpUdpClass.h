@@ -40,7 +40,7 @@ private:
 
 	bool 						is_lister_fd(int fd);
 	bool 						is_udp_fd(int fd);
-	void 						deal_lister_fd(int fd);
+	int 						deal_lister_fd(int fd);
 	void 						deal_udp_recv_fd(int fd);
 	void 						deal_client_recv_fd(int fd);
 	void 						deal_udp_send_fd(int fd);
