@@ -12,7 +12,7 @@
 
 #include "tcpUdpClass.h"
 
-
+class tcpUdpClass;
 int socket_accept_tcp(int fd, tcpUdpClass	*ptp);
 int socket_accept_udp(int fd, tcpUdpClass	*ptp);
 

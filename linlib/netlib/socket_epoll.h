@@ -39,7 +39,7 @@ static int  socket_epoll_add(int efd, int sock, int fd) {
 }
 
 static int  socket_epoll_del(int efd, int sock) {
-	if (epoll_ctl(efd, EPOLL_CTL_DEL, sock , NULL) {
+	if (epoll_ctl(efd, EPOLL_CTL_DEL, sock , NULL) == -1) {
 		LOG_ERROR("socket_epoll_del error:%d",errno);
 		return NET_ERR;
 	}
@@ -57,19 +57,18 @@ static int  socket_epoll_write(int efd, int sock, int fd, bool enable) {
 	return NET_OK;
 }
 
-/*static int  socket_epoll_wait(int efd, struct event *e, int max) {
-	struct epoll_event ev[max];
-	int n = epoll_wait(efd , ev, max, -1);
-	int i;
-	for (i=0;i<n;i++) {
-		e[i].s = ev[i].data.fd;
-		unsigned flag = ev[i].events;
-		e[i].write = (flag & EPOLLOUT) != 0;
-		e[i].read = (flag & EPOLLIN) != 0;
-	}
+static int  socket_epoll_wait(int efd, struct epoll_event *e, int max,int timeout) {
 
-	return n;
+	while(1){
+		int n = epoll_wait(efd , e, max, timeout);
+		if (n < 0){
+			if(errno == EINTR){
+				continue; 
+			}
+			return NET_ERR;
+		}
+		return n;
+	}
 }
-*/
 
 #endif

@@ -6,7 +6,7 @@ tcpUdpClass::tcpUdpClass()
 {
 	m_epoll			= -1;
 	m_online		= 0;
-	m_status		= TCPCLASSNOTRUN;
+
 }
 
 tcpUdpClass::~tcpUdpClass()
@@ -85,14 +85,12 @@ int tcpUdpClass::go_run()
 	int ready_event_nums;
 	int fd;
 
-	ready_event_nums = epoll_wait(m_epoll,m_ready_event,EPOLL_SIZE,50);
+	ready_event_nums = socket_epoll_wait(m_epoll,m_ready_event,EPOLL_SIZE,EPOLLTIMEOUT);
 	if( ready_event_nums < 0 ){
-		switch( errno ){
-			case EBADF:
-			case EINVAL:
-				LOG_ERROR("epoll_wait fail");
-				return NET_EPOLL_ERR;
-		}
+		socket_epoll_release(m_epoll);
+		m_epoll = -1;
+		LOG_ERROR("socket_epoll_wait fail");
+		return NET_EPOLL_ERR;
 	}
 	if(ready_event_nums == 0){
 		//设置超时的情况
@@ -115,23 +113,14 @@ int tcpUdpClass::go_run()
 			if ( m_ready_event[i].events & EPOLLIN){
 				deal_udp_recv_fd(fd);
 			}
-			else if (m_ready_event[i].events & EPOLLOUT){
-				deal_udp_send_fd(fd);
-			}
-			else{
-
-			}	
 		}
 		else{
 			if ( m_ready_event[i].events & EPOLLIN){
 				deal_client_recv_fd(fd);
 			}
-			else if (m_ready_event[i].events & EPOLLOUT){
+			if (m_ready_event[i].events & EPOLLOUT){
 				deal_client_send_fd(fd);
 			}
-			else{
-
-			}	
 		}
 	}
 	return NET_OK;
@@ -152,83 +141,66 @@ void tcpUdpClass::deal_client_recv_fd(int fd)
 	if (n == NULL){
 		return;
 	}
-
-	int recv_len;
-	void *buf;
-	int size;
-
-	loop:
-
-	buf = n->r_pdata + n->r_size;
-	size = (char *)n->r_ptail - (char *)n->r_pdata;
-	size = size - (n->r_size);
-	recv_len = recv(fd,buf,size,0);
-				
-	if(recv_len > 0){
-		n->r_size += recv_len;
-		if((n->r_pdata + n->r_size) == n->r_ptail && n->r_pdata != n->r_porigin){   //对数据的移动
-			memcpy(n->r_porigin,n->r_pdata,n->r_size);
-			n->r_pdata = n->r_porigin;
-			//这里要重构，回形缓存满了，导致接受的数据不够多，要下次epoll才有。（当前是LT，问题倒是不大）
-		}
-		if(n->r_size >= sizeof(header_t)){
-			int i_packet_size = ((header_t *)n->r_pdata)->size;
-
-			if(i_packet_size > MSGMAXSIZE  ){
-				pclose_fd(fd);
-				n->handle->error(fd,"packet size too big");
-				return ;
-			}
-
-			if(n->r_size >= i_packet_size ){
-				n->handle->message(fd,n->r_pdata,((header_t *)n->r_pdata)->cmd,i_packet_size);
-				n->r_pdata += i_packet_size;
-				n->r_size -= i_packet_size;
-
-				goto loop;
-			}
-		}
-	}else if (recv_len == 0){
+	int ret = socket_recv_tcp(fd,n);
+	if(ret == NET_CLOSED ){
 		pclose_fd(fd);
 		n->handle->disconnect(fd);
-	}else{
-		if (errno == EINTR){
-			goto loop;
-		}
-		else if(errno == EAGAIN || errno == EWOULDBLOCK){
-			return;
-		}
-		else{		
-			pclose_fd(fd);
-			n->handle->error(fd,"client fail");
-		}
+		return;
 	}
+	if( ret == NET_ERR){
+		pclose_fd(fd);
+		n->handle->error(fd,"client fail");
+		return;
+	}
+	// ret == NET_AGAIN
+
+	while( n->r_size >= sizeof(header_t) ){
+		header_t * phead = (header_t *)n->r_pdata;
+		int i_packet_size = phead->size;
+
+		if(i_packet_size > MSGMAXSIZE  ){
+			pclose_fd(fd);
+			LOG_ERROR("packet size too big");
+			n->handle->error(fd,"packet size too big");
+			return ;
+		}
+
+		if(n->r_size >= i_packet_size ){
+			n->handle->message(fd,n->r_pdata,((header_t *)n->r_pdata)->cmd,i_packet_size);
+			n->r_pdata += i_packet_size;
+			n->r_size -= i_packet_size;
+			continue;
+		}
+		break;
+	}
+
 }
 
-void tcpUdpClass::send_udp_addr(int fd,char *buf,int size,struct sockaddr_in client_addr,socklen_t client_len)
+void tcpUdpClass::send_udp_addr(int fd,const char *buf,const int size,struct sockaddr_in client_addr,socklen_t client_len)
 {
 	socket_send_udp_addr(fd,buf,size,client_addr);
 }
-void tcpUdpClass::send_udp_ip_port(int fd,char *buf,int size,const char *ip,const int port)
+void tcpUdpClass::send_udp_ip_port(int fd,const char *buf,const int size,const char *ip,const int port)
 {
 	socket_send_udp_ip_port(fd,buf,size,ip,port);
 }
-void tcpUdpClass::send_tcp(int fd,char *buf,int size)
+int tcpUdpClass::send_tcp(int fd,char *buf,int size)
 {
 	if(size <= 0 ){
-		return;
+		return NET_ARG;
 	}
 	deal_client_send_fd(fd);
 
 	fd_data_struct_t* n = find_client_node(fd);
 	if( n == NULL){
-		return ;
+		LOG_ERROR("find_client_node fail");
+		return NET_ERR;
 	}
 	if(n->s_size != 0){		//存在缓存
 		//加入缓存
 		add_to_send_buf(n,buf,size);
 		socket_epoll_write(m_epoll,fd,fd,true);
-		return ;
+		return NET_OK;
 	}
 	//不存在缓存
 	//发送
@@ -236,26 +208,27 @@ void tcpUdpClass::send_tcp(int fd,char *buf,int size)
 	int ret = socket_send_tcp(fd,buf,size);
 	if (ret == NET_ERR){
 		pclose_fd(fd);
-		return;
+		n->handle->error(fd,"socket_send_tcp fail");
+		return NET_ERR;
 	}
 
 	if((size - ret) > 0){
 		add_to_send_buf(n,buf + ret,size - ret);
 		socket_epoll_write(m_epoll,fd,fd,true);
 	}
-	return;
+	return NET_OK;
 }
 int tcpUdpClass::add_to_send_buf(fd_data_struct_t* n,char *buf,int size)
 {
 	if (size <= 0 ){
-		return 0;
+		return NET_ARG;
 	}
 	if ( (n->s_size + size) > MSGMAXSIZE ){
-		//printf("---------------------------------------------------------------------------------5\n");
-		return -1;
+		LOG_ERROR("msg too much, will not add_to_send_buf");
+		return NET_ERR;
 	}
 
-	if ( (n->s_pdata + n->s_size + size ) > n->s_ptail ){
+	if ( (n->s_pdata + n->s_size + size ) > n->s_ptail ){	//超过尾部了，移动
 		memcpy(n->s_porigin,n->s_pdata,n->s_size);
 		n->s_pdata = n->s_porigin;
 	}
@@ -263,24 +236,26 @@ int tcpUdpClass::add_to_send_buf(fd_data_struct_t* n,char *buf,int size)
 	memcpy(n->s_pdata + n->s_size , buf,size);
 	n->s_size += size;
 
-	return 0;
+	return NET_OK;
 }
 
 
-void tcpUdpClass::deal_client_send_fd(int fd)
+int tcpUdpClass::deal_client_send_fd(int fd)
 {
 	fd_data_struct_t* n = find_client_node(fd);
 	if( n == NULL){
-		return ;
+		LOG_ERROR("find_client_node fail");
+		return NET_ERR;
 	}
 	if(n->s_size == 0){
-		return ;
+		return NET_OK;
 	}
 
 	int ret = socket_send_tcp(fd,(char *)n->s_pdata,n->s_size);
 	if (ret == NET_ERR){
-		//printf("--------------------------------------------------------------------------6\n");
 		pclose_fd(fd);
+		n->handle->error(fd,"socket_send_tcp fail");
+		return NET_ERR;
 	}
 
 	n->s_pdata += ret;
@@ -288,7 +263,7 @@ void tcpUdpClass::deal_client_send_fd(int fd)
 	if(n->s_size == 0){
 		socket_epoll_write(m_epoll,fd,fd,false);
 	}
-	return;
+	return NET_OK;
 }	
 
 
@@ -297,7 +272,6 @@ bool tcpUdpClass::is_lister_fd(int fd)
 	if (m_lister_fd_map.find(fd) == m_lister_fd_map.end()){
 		return false;
 	}
-	
 	return true;
 }
 bool tcpUdpClass::is_udp_fd(int fd)
@@ -305,16 +279,11 @@ bool tcpUdpClass::is_udp_fd(int fd)
 	if (m_udp_fd_map.find(fd) == m_udp_fd_map.end()){
 		return false;
 	}
-	
 	return true;
 }
 int tcpUdpClass::close_fd(int fd)
 {
-	epoll_ctl(m_epoll,EPOLL_CTL_DEL,fd,NULL);
-	del_client_node(fd);
-	close(fd);
-	--m_online;
-
+	pclose_fd(fd);
 	return 0;
 }
 void tcpUdpClass::pclose_fd(int fd)
@@ -324,7 +293,6 @@ void tcpUdpClass::pclose_fd(int fd)
 	close(fd);
 	--m_online;
 }
-
 
 
 int tcpUdpClass::init_client_node(const int fd,gateway_handle_t* handle)

@@ -1,0 +1,12 @@
+
+
+make -f makefile_testnet
+
+cd bin
+
+
+./testnet
+./clienttestnet 127.0.0.1 6001 1
+./clienttestnet 127.0.0.1 6002 2
+nc -u 127.0.0.1 6003
+nc -u 127.0.0.1 6004

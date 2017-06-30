@@ -19,14 +19,14 @@ int socket_accept_tcp(int fd, tcpUdpClass	*ptp)
 			return NET_ERR;
 		}
 
-		set_socket_nonblock(client);
-		if ((ptp->m_online+1) > EPOLL_SIZE){
+		socket_help_set_nonblock(client);
+		if ( (ptp->m_online +1 ) > EPOLL_SIZE){
 			LOG_ERROR("more than EPOLL_SIZE");
 			(ptp->m_lister_fd_map)[fd]->error(client,"more than EPOLL_SIZE");
 			return NET_ERR;
 		}
 
-		if (socket_epoll_add(m_epoll,client,client) == NET_ERR){
+		if (socket_epoll_add(ptp->m_epoll,client,client) == NET_ERR){
 			LOG_ERROR("socket_epoll_add fail");
 			(ptp->m_lister_fd_map)[fd]->error(-1,"add epoll fail");
 			close(client);
@@ -41,7 +41,7 @@ int socket_accept_tcp(int fd, tcpUdpClass	*ptp)
 
 
 char tmp_udp_buf[MSGMAXSIZE];
-int socket_accept_udp(int fd,std::map<int, tcpUdpClass	*ptp)
+int socket_accept_udp(int fd, tcpUdpClass	*ptp)
 {
 	int  len;
 	struct sockaddr_in addr;

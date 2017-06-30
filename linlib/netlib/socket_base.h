@@ -15,7 +15,8 @@
 
 
 
-#define EPOLL_SIZE 10240
+#define EPOLL_SIZE 2048
+#define EPOLLTIMEOUT 500
 #define MSGMAXSIZE 65535
 
 
@@ -24,6 +25,7 @@
 #define NET_ERR				-1
 #define NET_ARG				-2
 #define NET_EPOLL_ERR		-3
+#define NET_CLOSED			-4
 
 
 typedef struct header
