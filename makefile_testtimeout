@@ -1,0 +1,51 @@
+Dir=linlib/ \
+linlib/timeoutlib/ \
+work/testtimeout/
+
+
+
+
+#---------------------------
+testtimeoutSrc=$(foreach dir,$(Dir), $(wildcard $(dir)*.cpp))
+testtimeoutObj=$(patsubst %.cpp,%.o,$(testtimeoutSrc))
+
+#---------------------------
+makeDir=./makeDir
+testtimeout = bin/testtimeout
+
+#---------------------------
+Inc =$(foreach dir,$(Dir),-I $(dir)) -I ./
+Lib =`pkg-config hiredis --libs --cflags` -lpthread 
+CC=g++
+#---------------------------
+
+.PHONY: all clean
+
+all:	$(makeDir) $(testtimeout)
+	@echo all is ok
+
+#------------ 
+$(makeDir):
+	mkdir -p bin/
+
+#------------ 
+$(testtimeout):$(testtimeoutObj)
+	$(CC) $(Lib) -o $@ $^
+
+
+linlib/timeoutlib/%.o:linlib/timeoutlib/%.cpp
+	$(CC) $(Inc) -c -o $@ $^
+
+work/testtimeout/%.o:work/testtimeout/%.cpp
+	$(CC) $(Inc) -c -o $@ $^
+
+
+#------------ 
+
+#------------ 
+
+
+clean:
+	rm -rf $(testtimeoutObj)
+	rm -rf $(testtimeout)
+
