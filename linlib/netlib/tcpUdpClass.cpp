@@ -254,6 +254,7 @@ void tcpUdpClass::send_tcp(int fd,char *buf,int size)
 	if(n->s_size != 0){		//存在缓存
 		//加入缓存
 		add_to_send_buf(n,buf,size);
+		sp_write(m_epoll,fd,fd,true);
 		return ;
 	}
 	//不存在缓存
@@ -265,8 +266,11 @@ void tcpUdpClass::send_tcp(int fd,char *buf,int size)
 		//printf("--------------------------------------------------------------------------4\n");
 		return;
 	}
-
-	add_to_send_buf(n,buf + ret,size - ret);
+	if ( (size - ret) > 0 ){
+		sp_write(m_epoll,fd,fd,true);
+		add_to_send_buf(n,buf + ret,size - ret);
+	}
+	
 	return;
 }
 int tcpUdpClass::add_to_send_buf(fd_data_struct_t* n,char *buf,int size)
@@ -312,6 +316,9 @@ void tcpUdpClass::deal_client_send_fd(int fd)
 
 	n->s_pdata += ret;
 	n->s_size -=ret; 
+	if (n->size == 0){
+		sp_write(m_epoll,fd,fd,false);
+	}
 	return;
 }	
 int tcpUdpClass::net_send(int fd,char *buf,int size)
