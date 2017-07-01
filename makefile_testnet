@@ -1,5 +1,6 @@
 Dir=linlib/ \
 linlib/commonlib/ \
+linlib/loglib/ \
 linlib/netlib/ \
 work/testnet/
 
@@ -35,6 +36,9 @@ $(testnet):$(testnetObj)
 	$(CC) $(Lib) -o $@ $^
 
 linlib/commonlib/%.o:linlib/commonlib/%.cpp
+	$(CC) $(Inc) -c -o $@ $^
+
+linlib/loglib/%.o:linlib/loglib/%.cpp
 	$(CC) $(Inc) -c -o $@ $^
 
 linlib/netlib/%.o:linlib/netlib/%.cpp

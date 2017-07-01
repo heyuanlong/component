@@ -1,6 +1,5 @@
-#ifndef SOCKETCLASS_H
-#define SOCKETCLASS_H
-
+#ifndef SOCKETBASE_H
+#define SOCKETBASE_H
 
 #include <string.h>
 #include <unistd.h>
@@ -12,10 +11,23 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <pthread.h>
-
 #include <sys/epoll.h>
 
+
+
+#define EPOLL_SIZE 2048
+#define EPOLLTIMEOUT 500
 #define MSGMAXSIZE 65535
+
+
+#define NET_OK 				0
+#define NET_AGAIN 			-100
+#define NET_ERR				-1
+#define NET_ARG				-2
+#define NET_EPOLL_ERR		-3
+#define NET_CLOSED			-4
+
+
 typedef struct header
 {
 	int size;
@@ -23,12 +35,6 @@ typedef struct header
 }header_t;
 
 
-
-typedef struct msg_string
-{
-	header_t 	head;
-	char	 	data[MSGMAXSIZE];
-}msg_string_t;
 
 
 typedef struct gateway_handle
@@ -65,8 +71,7 @@ typedef struct fd_data_struct{
 }fd_data_struct_t;
 
 
-int 			socketinit(const char *ip,int port);
-int 			socketinit_udp(const char *ip,int port);
-int 			set_socket_nonblock(int fd);
+
+
 
 #endif

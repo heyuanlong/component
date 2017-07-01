@@ -2,15 +2,9 @@
 #include "stdlib.h"
 #include "string.h"
 #include "netlib/tcpUdpClass.h"
-#include "netlib/socket_base.h"
-
+#include "netlib/socketClass.h"
 
 #include "base.h"
-
-
-
-tcpUdpClass tp;
-
 
 void test_open()
 {
@@ -35,11 +29,6 @@ void test_message(const int fd,const void * msg, const int cmd,const int size)
 	write(STDOUT_FILENO,que->data,que->dataSize);
 	printf("\n");
 
-	for (int i = 0; i < 200; ++i)
-	{
-		//tp.send_tcp(fd,"111111111111111111111111",sizeof("111111111111111111111111"));
-	}
-	
 }
 
 
@@ -57,8 +46,6 @@ void test_udp_message(const int fd,const void * msg,const int size,struct sockad
 	memcpy(recvbuf,msg,size);
 	recvbuf[size]='\0';
 	printf("socket %d recv from : %s : %d message: %s ，%d bytes\n",fd, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), recvbuf, size);
-
-	tp.send_udp_addr(fd,(const char *)msg, size, client_addr, client_len);
 }
 
 
@@ -78,12 +65,9 @@ int main(int argc, char const *argv[])
 
 
 
-	
+	tcpUdpClass tp;
 	tp.add_tcp_listen("0.0.0.0",6001,&handle);
-	tp.add_tcp_listen("0.0.0.0",6002,&handle);
-	
-	tp.add_udp_listen("0.0.0.0",6003,&udphandle);
-	tp.add_udp_listen("0.0.0.0",6004,&udphandle);
+	tp.add_udp_listen("0.0.0.0",6002,&udphandle);
 
 	for (;;)
 	{
